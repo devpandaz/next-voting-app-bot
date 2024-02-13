@@ -88,7 +88,7 @@ class handler(BaseHTTPRequestHandler):
                         if user_command == "start":
                             self.reply_user({
                                 "text":
-                                f"Hello! Get started by pressing <a href='{WEBAPP_URL}'>Open Feed</a>",
+                                f"Hello! Get started by pressing <a href='{WEBAPP_URL}'>Open Feed</a>. ",
                                 "parse_mode": "HTML",
                             })
                             return
@@ -108,6 +108,11 @@ class handler(BaseHTTPRequestHandler):
         if "inline_query" in data:
             inline_query = data['inline_query']
             if inline_query['query'] == "":
+                requests.post(f'{BOT_URL}/answerInlineQuery',
+                                json={
+                                    "inline_query_id": inline_query["id"],
+                                    "results": [], # clear the results
+                                })
                 return
 
             # fetch data using api
@@ -118,6 +123,15 @@ class handler(BaseHTTPRequestHandler):
                                 }).json()
             print(res)
             questionSearchResults = res['questions']
+
+            if len(questionSearchResults) == 0:
+                requests.post(f'{BOT_URL}/answerInlineQuery',
+                json={
+                    "inline_query_id": inline_query["id"],
+                    "results": [], # clear the results
+                })
+                return
+
             queryResults = []
             for question in questionSearchResults:
                 if len(queryResults) < 10:
@@ -166,7 +180,6 @@ class handler(BaseHTTPRequestHandler):
                                 json={
                                     "inline_query_id": inline_query["id"],
                                     "results": queryResults,
-                                    "cache_time": 1000,
                                     "button": {
                                         "text":
                                         "Open complete search results in web app",
